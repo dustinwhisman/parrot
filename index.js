@@ -18,18 +18,6 @@ const generateRoomCode = (length) => {
   return roomCode;
 };
 
-const sendGeneralInformation = (ws) => {
-  const obj = {
-    type: 'info',
-    params: {
-      roomCode: ws.roomCode ?? 'no room',
-      numberOfClients: ws.roomCode ? rooms[ws.roomCode].length : 0,
-    },
-  };
-
-  ws.send(JSON.stringify(obj));
-};
-
 const createRoom = (ws) => {
   const roomCode = generateRoomCode(4);
   rooms[roomCode] = [ws];
@@ -46,6 +34,48 @@ const createRoom = (ws) => {
   );
 };
 
+const joinRoom = (ws, params) => {
+  const { roomCode } = params;
+  if (rooms[roomCode] == null) {
+    const message = `room ${roomCode} does not exist`;
+    console.warn(message);
+    ws.send(
+      JSON.stringify({
+        type: 'error',
+        params: {
+          message,
+        },
+      }),
+    );
+    return;
+  }
+
+  if (rooms[roomCode].length >= maxClients) {
+    const message = `room ${roomCode} is full`;
+    console.warn(message);
+    ws.send(
+      JSON.stringify({
+        type: 'error',
+        params: { message },
+      }),
+    );
+    return;
+  }
+
+  rooms[roomCode].push(ws);
+  ws.roomCode = roomCode;
+
+  ws.send(
+    JSON.stringify({
+      type: 'info',
+      params: {
+        roomCode,
+        message: `joined room with room code: ${roomCode}`,
+      },
+    }),
+  );
+};
+
 wss.on('connection', (ws) => {
   ws.on('message', (data) => {
     try {
@@ -57,11 +87,9 @@ wss.on('connection', (ws) => {
           createRoom(ws);
           break;
         case 'join':
-          // join room
-          ws.send('joined room');
+          joinRoom(ws, params);
           break;
         case 'leave':
-          // leave room
           ws.send('left room');
           break;
         default:

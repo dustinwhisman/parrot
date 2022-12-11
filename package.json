@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "A basic websocket server to handle connecting users in rooms.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },

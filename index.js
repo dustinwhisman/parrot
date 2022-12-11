@@ -8,7 +8,7 @@ let rooms = {};
 
 const generateRoomCode = (length) => {
   let roomCode = '';
-  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'abcdefghijklmnopqrstuvwxyz';
   for (let i = 0; i < length; i += 1) {
     roomCode += characters.charAt(
       Math.floor(Math.random() * characters.length),
@@ -31,11 +31,19 @@ const sendGeneralInformation = (ws) => {
 };
 
 const createRoom = (ws) => {
-  const roomCode = generateRoomCode(6);
+  const roomCode = generateRoomCode(4);
   rooms[roomCode] = [ws];
   ws.roomCode = roomCode;
 
-  sendGeneralInformation(ws);
+  ws.send(
+    JSON.stringify({
+      type: 'info',
+      params: {
+        roomCode,
+        message: `room created with room code: ${roomCode}`,
+      },
+    }),
+  );
 };
 
 wss.on('connection', (ws) => {
@@ -46,7 +54,6 @@ wss.on('connection', (ws) => {
 
       switch (type) {
         case 'create':
-          // create room
           createRoom(ws);
           break;
         case 'join':
@@ -66,5 +73,12 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.send('something');
+  ws.send(
+    JSON.stringify({
+      type: 'info',
+      params: {
+        message: 'connected!',
+      },
+    }),
+  );
 });

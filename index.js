@@ -22,13 +22,15 @@ const createRoom = (ws) => {
   const roomCode = generateRoomCode(4);
   rooms[roomCode] = [ws];
   ws.roomCode = roomCode;
+  const message = `room created with room code: ${roomCode}`;
+  console.info(message);
 
   ws.send(
     JSON.stringify({
       type: 'info',
       params: {
         roomCode,
-        message: `room created with room code: ${roomCode}`,
+        message,
       },
     }),
   );
@@ -64,16 +66,30 @@ const joinRoom = (ws, params) => {
 
   rooms[roomCode].push(ws);
   ws.roomCode = roomCode;
+  const message = `joined room with room code: ${roomCode}`;
+  console.info(message);
 
   ws.send(
     JSON.stringify({
       type: 'info',
       params: {
         roomCode,
-        message: `joined room with room code: ${roomCode}`,
+        message,
       },
     }),
   );
+};
+
+const leaveRoom = (ws) => {
+  const { roomCode } = ws;
+  rooms[roomCode] = rooms[roomCode].filter((s) => s !== ws);
+  ws.roomCode = undefined;
+  console.info(`user left room ${roomCode}`);
+
+  if (rooms[roomCode].length === 0) {
+    delete rooms[roomCode];
+    console.info(`deleted room ${roomCode}`);
+  }
 };
 
 wss.on('connection', (ws) => {
@@ -90,7 +106,7 @@ wss.on('connection', (ws) => {
           joinRoom(ws, params);
           break;
         case 'leave':
-          ws.send('left room');
+          leaveRoom(ws);
           break;
         default:
           console.warn(`Type ${type} unknown`);
@@ -99,6 +115,10 @@ wss.on('connection', (ws) => {
     } catch (error) {
       console.error(error);
     }
+  });
+
+  ws.on('close', () => {
+    leaveRoom(ws);
   });
 
   ws.send(

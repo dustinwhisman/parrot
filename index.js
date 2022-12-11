@@ -92,6 +92,12 @@ const leaveRoom = (ws) => {
   }
 };
 
+const broadcastToRoom = (ws, data) => {
+  const { roomCode } = ws;
+  console.info(`broadcasting message to room ${roomCode}: ${data}`);
+  rooms[roomCode].forEach((client) => client.send(data));
+};
+
 wss.on('connection', (ws) => {
   ws.on('message', (data) => {
     try {
@@ -107,6 +113,9 @@ wss.on('connection', (ws) => {
           break;
         case 'leave':
           leaveRoom(ws);
+          break;
+        case 'message':
+          broadcastToRoom(ws, data);
           break;
         default:
           console.warn(`Type ${type} unknown`);

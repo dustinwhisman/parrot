@@ -104,8 +104,20 @@ const joinRoom = (ws, params) => {
 const leaveRoom = (ws) => {
   const { roomCode } = ws;
   rooms[roomCode] = rooms[roomCode].filter((s) => s !== ws);
-  ws.roomCode = undefined;
   console.info(`user left room ${roomCode}`);
+
+  broadcastToRoom(
+    ws,
+    JSON.stringify({
+      type: 'participant left',
+      params: {
+        roomCode,
+        participants: rooms[roomCode].map(
+          (participant) => participant.name || participant.hostName,
+        ),
+      },
+    }),
+  );
 
   if (rooms[roomCode].length === 0) {
     delete rooms[roomCode];

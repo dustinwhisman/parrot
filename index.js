@@ -18,11 +18,13 @@ const generateRoomCode = (length) => {
   return roomCode;
 };
 
-const createRoom = (ws) => {
+const createRoom = (ws, params) => {
   const roomCode = generateRoomCode(4);
+  const { hostName } = params;
   rooms[roomCode] = [ws];
   ws.roomCode = roomCode;
-  const message = `room created with room code: ${roomCode}`;
+  ws.hostName = hostName;
+  const message = `room created with room code: ${roomCode}. Host's name: ${hostName}`;
   console.info(message);
 
   ws.send(
@@ -30,6 +32,7 @@ const createRoom = (ws) => {
       type: 'info',
       params: {
         roomCode,
+        hostName,
         message,
       },
     }),
@@ -37,7 +40,7 @@ const createRoom = (ws) => {
 };
 
 const joinRoom = (ws, params) => {
-  const { roomCode } = params;
+  const { roomCode, name } = params;
   if (rooms[roomCode] == null) {
     const message = `room ${roomCode} does not exist`;
     console.warn(message);
@@ -66,15 +69,33 @@ const joinRoom = (ws, params) => {
 
   rooms[roomCode].push(ws);
   ws.roomCode = roomCode;
-  const message = `joined room with room code: ${roomCode}`;
+  ws.name = name;
+  const message = `${name} joined room with room code: ${roomCode}`;
   console.info(message);
 
+  const participants = rooms[roomCode].map(
+    (participant) => participant.name || participant.hostName,
+  );
   ws.send(
     JSON.stringify({
       type: 'info',
       params: {
         roomCode,
+        name,
         message,
+        participants,
+      },
+    }),
+  );
+
+  broadcastToRoom(
+    ws,
+    JSON.stringify({
+      type: 'participant joined',
+      params: {
+        roomCode,
+        name,
+        participants,
       },
     }),
   );
@@ -106,7 +127,7 @@ wss.on('connection', (ws) => {
 
       switch (type) {
         case 'create':
-          createRoom(ws);
+          createRoom(ws, params);
           break;
         case 'join':
           joinRoom(ws, params);
@@ -114,11 +135,8 @@ wss.on('connection', (ws) => {
         case 'leave':
           leaveRoom(ws);
           break;
-        case 'message':
-          broadcastToRoom(ws, data);
-          break;
         default:
-          console.warn(`Type ${type} unknown`);
+          broadcastToRoom(ws, data);
           break;
       }
     } catch (error) {

@@ -41,7 +41,7 @@ const createRoom = (ws, params) => {
 };
 
 const joinRoom = (ws, params) => {
-  const { roomCode, name, isOwner } = params;
+  const { roomCode, name } = params;
   const formattedRoomCode = roomCode.toLowerCase();
   if (rooms[formattedRoomCode] == null) {
     const message = `room ${formattedRoomCode} does not exist`;
@@ -105,7 +105,7 @@ const joinRoom = (ws, params) => {
 
 const leaveRoom = (ws) => {
   const { roomCode } = ws;
-  rooms[roomCode] = rooms[roomCode].filter((s) => s !== ws);
+  rooms[roomCode] = rooms[roomCode]?.filter((s) => s !== ws) ?? undefined;
   console.info(`user left room ${roomCode}`);
 
   broadcastToRoom(
@@ -114,12 +114,13 @@ const leaveRoom = (ws) => {
       type: 'participant left',
       params: {
         roomCode,
-        participants: rooms[roomCode].map((participant) => participant.name),
+        participants:
+          rooms[roomCode]?.map((participant) => participant.name) ?? [],
       },
     }),
   );
 
-  if (rooms[roomCode].length === 0) {
+  if (rooms[roomCode]?.length === 0) {
     delete rooms[roomCode];
     console.info(`deleted room ${roomCode}`);
   }
@@ -128,7 +129,7 @@ const leaveRoom = (ws) => {
 const broadcastToRoom = (ws, data) => {
   const { roomCode } = ws;
   console.info(`broadcasting message to room ${roomCode}: ${data}`);
-  rooms[roomCode].forEach((client) => client.send(data));
+  rooms[roomCode]?.forEach((client) => client.send(data));
 };
 
 wss.on('connection', (ws) => {

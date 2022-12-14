@@ -41,8 +41,9 @@ const createRoom = (ws, params) => {
 
 const joinRoom = (ws, params) => {
   const { roomCode, name } = params;
-  if (rooms[roomCode] == null) {
-    const message = `room ${roomCode} does not exist`;
+  const formattedRoomCode = roomCode.toLowerCase();
+  if (rooms[formattedRoomCode] == null) {
+    const message = `room ${formattedRoomCode} does not exist`;
     console.warn(message);
     ws.send(
       JSON.stringify({
@@ -55,8 +56,8 @@ const joinRoom = (ws, params) => {
     return;
   }
 
-  if (rooms[roomCode].length >= maxClients) {
-    const message = `room ${roomCode} is full`;
+  if (rooms[formattedRoomCode].length >= maxClients) {
+    const message = `room ${formattedRoomCode} is full`;
     console.warn(message);
     ws.send(
       JSON.stringify({
@@ -67,20 +68,20 @@ const joinRoom = (ws, params) => {
     return;
   }
 
-  rooms[roomCode].push(ws);
-  ws.roomCode = roomCode;
+  rooms[formattedRoomCode].push(ws);
+  ws.roomCode = formattedRoomCode;
   ws.name = name;
-  const message = `${name} joined room with room code: ${roomCode}`;
+  const message = `${name} joined room with room code: ${formattedRoomCode}`;
   console.info(message);
 
-  const participants = rooms[roomCode].map(
+  const participants = rooms[formattedRoomCode].map(
     (participant) => participant.name || participant.hostName,
   );
   ws.send(
     JSON.stringify({
       type: 'info',
       params: {
-        roomCode,
+        roomCode: formattedRoomCode,
         name,
         message,
         participants,
@@ -93,7 +94,7 @@ const joinRoom = (ws, params) => {
     JSON.stringify({
       type: 'participant joined',
       params: {
-        roomCode,
+        roomCode: formattedRoomCode,
         name,
         participants,
       },

@@ -20,11 +20,11 @@ const generateRoomCode = (length) => {
 
 const createRoom = (ws, params) => {
   const roomCode = generateRoomCode(4);
-  const { hostName } = params;
+  const { name } = params;
   rooms[roomCode] = [ws];
   ws.roomCode = roomCode;
-  ws.hostName = hostName;
-  const message = `room created with room code: ${roomCode}. Host's name: ${hostName}`;
+  ws.name = name;
+  const message = `room created with room code: ${roomCode}. Host's name: ${name}`;
   console.info(message);
 
   ws.send(
@@ -32,15 +32,16 @@ const createRoom = (ws, params) => {
       type: 'info',
       params: {
         roomCode,
-        hostName,
+        name,
         message,
+        participants: [name],
       },
     }),
   );
 };
 
 const joinRoom = (ws, params) => {
-  const { roomCode, name } = params;
+  const { roomCode, name, isOwner } = params;
   const formattedRoomCode = roomCode.toLowerCase();
   if (rooms[formattedRoomCode] == null) {
     const message = `room ${formattedRoomCode} does not exist`;
@@ -75,7 +76,7 @@ const joinRoom = (ws, params) => {
   console.info(message);
 
   const participants = rooms[formattedRoomCode].map(
-    (participant) => participant.name || participant.hostName,
+    (participant) => participant.name,
   );
   ws.send(
     JSON.stringify({
@@ -113,9 +114,7 @@ const leaveRoom = (ws) => {
       type: 'participant left',
       params: {
         roomCode,
-        participants: rooms[roomCode].map(
-          (participant) => participant.name || participant.hostName,
-        ),
+        participants: rooms[roomCode].map((participant) => participant.name),
       },
     }),
   );

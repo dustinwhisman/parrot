@@ -149,7 +149,7 @@ wss.on('connection', (ws) => {
           leaveRoom(ws);
           break;
         default:
-          broadcastToRoom(ws, data);
+          broadcastToRoom(ws, JSON.stringify(obj));
           break;
       }
     } catch (error) {
